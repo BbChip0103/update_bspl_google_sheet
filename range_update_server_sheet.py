@@ -46,8 +46,8 @@ def get_values_from_sheet(sheet, sheet_id, range_):
 def ping_server(target_ip):
     if not target_ip or not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', target_ip[0]):
         return
-    ping_status = sp.call(['ping', target_ip[0]], stdout=sp.DEVNULL)
-    # ping_status = sp.call(['ping', '-c', '5', '-q', target_ip[0]], stdout=sp.DEVNULL)
+    # ping_status = sp.call(['ping', target_ip[0]], stdout=sp.DEVNULL)
+    ping_status = sp.call(['ping', '-c', '5', '-q', target_ip[0]], stdout=sp.DEVNULL)
 
     return ping_status
 
@@ -107,15 +107,17 @@ if __name__ == '__main__':
     END_RANGE = 57
 
     while True:
-        print(str(datetime.now()))
-        print('Server check start!')
-        print()
+        try:
+            print(str(datetime.now()))
+            print('Server check start!')
+            print()
 
-        # single_update_server_sheet(SPREADSHEET_ID, SHEET_NAME, START_RANGE, END_RANGE)
-        multi_update_server_sheet(SPREADSHEET_ID, SHEET_NAME, START_RANGE, END_RANGE)
+            # single_update_server_sheet(SPREADSHEET_ID, SHEET_NAME, START_RANGE, END_RANGE)
+            multi_update_server_sheet(SPREADSHEET_ID, SHEET_NAME, START_RANGE, END_RANGE)
 
-        print(str(datetime.now()))
-        print('Server check end.')
-        print()
-
-        time.sleep(4)
+            print(str(datetime.now()))
+            print('Server check end.')
+            print()
+        except Exception as e:
+            print(e)
+        time.sleep(30)

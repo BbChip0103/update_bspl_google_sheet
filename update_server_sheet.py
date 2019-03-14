@@ -46,8 +46,8 @@ def get_value_from_sheet(sheet, sheet_id, range_):
 def ping_server(target_ip):
     if not target_ip or not re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', target_ip):
         return
-    ping_status = sp.call(['ping', target_ip], stdout=sp.DEVNULL)
-    # ping_status = sp.call(['ping', '-c', '5', '-q', target_ip], stdout=sp.DEVNULL)
+    # ping_status = sp.call(['ping', target_ip], stdout=sp.DEVNULL)
+    ping_status = sp.call(['ping', '-c', '5', '-q', target_ip], stdout=sp.DEVNULL)
 
     return ping_status
 
@@ -116,4 +116,4 @@ if __name__ == '__main__':
         print('Server check end.')
         print()
 
-        time.sleep(10)
+        time.sleep(100)
