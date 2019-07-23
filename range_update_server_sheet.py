@@ -10,6 +10,8 @@ from multiprocessing import Pool
 from functools import partial
 import time
 
+from check_gpu_state import get_gpu_state_from_ip
+
 def get_auth():
     # If modifying these scopes, delete the file token.pickle.
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -59,15 +61,30 @@ def update_sheet_status(sheet, sheet_id, range_, status, modified_time):
                 valueInputOption='USER_ENTERED', body=body).execute()
     return result
 
-def update_server_sheet(target_info, sheet, sheet_id, sheet_name):
+def update_gpu_status(sheet, sheet_id, range_, gpu_state):
+    values = gpu_state
+    body = { 'values': values }
+    result = sheet.values().update(
+                spreadsheetId=sheet_id, range=range_,
+                valueInputOption='USER_ENTERED', body=body).execute()
+    return result
+
+def update_server_sheet(target_info, sheet, sheet_id, sheet_name, gpu_state=False):
     target_ip, target_range = target_info
-    target_status_range = '{}!G{}:H{}'.format(sheet_name, target_range, target_range)
     ping_status = ping_server(target_ip)
+    target_status_range = '{}!G{}:H{}'.format(sheet_name, target_range, target_range)
     if ping_status == None:
         return
     if ping_status == 0:
-        update_sheet_status(sheet, sheet_id, 
-                            target_status_range, 'ON', str(datetime.now()))
+        update_sheet_status(sheet, sheet_id, target_status_range, 
+                            'ON', str(datetime.now()))            
+        if gpu_state:
+            target_index_range = '{}!B{}'.format(sheet_name, target_range)
+            gpu_index = get_values_from_sheet(sheet, sheet_id, target_index_range)
+            if gpu_index:
+                gpu_states = get_gpu_state_from_ip(target_ip[0])
+                target_status_range = '{}!I{}:M{}'.format(sheet_name, target_range, target_range+len(gpu_states)-1)
+                update_gpu_status(sheet, sheet_id, target_status_range, gpu_states)
     else:
         update_sheet_status(sheet, sheet_id, 
                             target_status_range, 'OFF', str(datetime.now()))
@@ -91,11 +108,12 @@ def multi_update_server_sheet(sheet_id, sheet_name, start_range, end_range):
     target_ip_range = '{}!F{}:F{}'.format(sheet_name, start_range, end_range)
     target_ip_list = get_values_from_sheet(sheet, sheet_id, target_ip_range)
 
-    with Pool(processes=4) as pool:
+    with Pool(processes=16) as pool:
         f_update_server_sheet = partial(update_server_sheet, 
                                             sheet=sheet, 
                                             sheet_id=sheet_id, 
-                                            sheet_name=sheet_name)
+                                            sheet_name=sheet_name,
+                                            gpu_state=True)
         pool.map(f_update_server_sheet, 
                     list(zip(target_ip_list, range(start_range, end_range+1))))
 
@@ -104,7 +122,7 @@ if __name__ == '__main__':
     SPREADSHEET_ID = '1q4JKDHPubUlub8XbGVShh9ZTCfkOyZnlX0Vlb41j2xM'
     SHEET_NAME = 'Sheet1'
     START_RANGE = 2
-    END_RANGE = 57
+    END_RANGE = 77
 
     while True:
         try:
@@ -120,4 +138,4 @@ if __name__ == '__main__':
             print()
         except Exception as e:
             print(e)
-        time.sleep(30)
+        time.sleep(60)

@@ -1,4 +1,6 @@
 *.json
 *.pickle
 vir_*
+__pycache__/
 
+backup/
